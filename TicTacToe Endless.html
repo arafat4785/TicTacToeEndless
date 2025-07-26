@@ -1,0 +1,327 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+            margin: 0;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 1;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 10px;
+            margin: 20px auto;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5em;
+            cursor: pointer;
+            transition: transform 0.3s, background 0.3s, opacity 0.3s;
+        }
+        .cell:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        .cell.x {
+            color: #ff6b6b;
+            animation: place 0.3s ease;
+        }
+        .cell.o {
+            color: #4ecdc4;
+            animation: place 0.3s ease;
+        }
+        .cell.blur {
+            opacity: 0.3;
+            transition: opacity 0.5s ease;
+        }
+        .cell.blink {
+            animation: blink 0.8s ease-in-out infinite;
+            opacity: 0.5;
+        }
+        @keyframes place {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+        #status {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        #win-message {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3em;
+            font-weight: bold;
+            color: black;
+            text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.5);
+            z-index: 10;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background: #ff6b6b;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background: #ff8787;
+        }
+        .ad-container {
+            margin-top: 10px;
+            text-align: center;
+            width: 100%;
+            max-width: 728px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .firework {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: firework 1.5s ease-out forwards;
+            z-index: 0;
+        }
+        @keyframes firework {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(3);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tic-Tac-Toe</h1>
+        <div id="status">Player X's Turn</div>
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+        <button onclick="resetGame()">Reset Game</button>
+        <div class="ad-container">
+            <script async="async" data-cfasync="false" src="//pl27260922.profitableratecpm.com/3abbb97e815b8751d7d51d7d72850f96/invoke.js"></script>
+            <div id="container-3abbb97e815b8751d7d51d7d72850f96"></div>
+        </div>
+    </div>
+    <div id="win-message"></div>
+    <script>
+        let currentPlayer = 'X';
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let xMoves = [];
+        let oMoves = [];
+
+        const cells = document.querySelectorAll('.cell');
+        const status = document.getElementById('status');
+        const winMessage = document.getElementById('win-message');
+
+        cells.forEach(cell => {
+            cell.addEventListener('click', () => handleCellClick(cell));
+        });
+
+        function updateBlink() {
+            cells.forEach(cell => cell.classList.remove('blink'));
+            if (xMoves.length === 3 && currentPlayer === 'X') {
+                cells[xMoves[0]].classList.add('blink');
+            }
+            if (oMoves.length === 3 && currentPlayer === 'O') {
+                cells[oMoves[0]].classList.add('blink');
+            }
+        }
+
+        function handleCellClick(cell) {
+            const index = cell.dataset.index;
+
+            if (board[index] !== '' || cell.classList.contains('x') || cell.classList.contains('o')) return;
+
+            if (currentPlayer === 'X') {
+                xMoves.push(index);
+                if (xMoves.length > 3) {
+                    const oldestX = xMoves.shift();
+                    board[oldestX] = '';
+                    cells[oldestX].textContent = '';
+                    cells[oldestX].classList.remove('x', 'o', 'blink');
+                    cells[oldestX].classList.add('blur');
+                    setTimeout(() => {
+                        cells[oldestX].classList.remove('blur');
+                    }, 500);
+                }
+            } else {
+                oMoves.push(index);
+                if (oMoves.length > 3) {
+                    const oldestO = oMoves.shift();
+                    board[oldestO] = '';
+                    cells[oldestO].textContent = '';
+                    cells[oldestO].classList.remove('x', 'o', 'blink');
+                    cells[oldestO].classList.add('blur');
+                    setTimeout(() => {
+                        cells[oldestO].classList.remove('blur');
+                    }, 500);
+                }
+            }
+
+            board[index] = currentPlayer;
+            cell.textContent = currentPlayer;
+            cell.classList.add(currentPlayer.toLowerCase());
+
+            if (checkWin()) {
+                status.textContent = '';
+                winMessage.style.display = 'block';
+                winMessage.textContent = `Player ${currentPlayer} Won!`;
+                cells.forEach(cell => {
+                    cell.style.pointerEvents = 'none';
+                    cell.classList.remove('blink');
+                });
+                startFireworks();
+                return;
+            }
+
+            if (board.every((cell, i) => cell !== '' || xMoves.includes(String(i)) || oMoves.includes(String(i)))) {
+                status.textContent = "It's a Draw!";
+                cells.forEach(cell => cell.classList.remove('blink'));
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            status.textContent = `Player ${currentPlayer}'s Turn`;
+            updateBlink();
+        }
+
+        function checkWin() {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+
+            return winPatterns.some(pattern => {
+                return pattern.every(index => board[index] === currentPlayer);
+            });
+        }
+
+        function startFireworks() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+            const createFirework = () => {
+                const firework = document.createElement('div');
+                firework.classList.add('firework');
+                firework.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                firework.style.left = `${Math.random() * 100}vw`;
+                firework.style.top = `${Math.random() * 100}vh`;
+                document.body.appendChild(firework);
+                setTimeout(() => firework.remove(), 1500);
+            };
+            for (let i = 0; i < 20; i++) {
+                setTimeout(createFirework, i * 100);
+            }
+        }
+
+        function resetGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            xMoves = [];
+            oMoves = [];
+            currentPlayer = 'X';
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('x', 'o', 'blur', 'blink');
+                cell.style.pointerEvents = 'auto';
+            });
+            status.textContent = `Player ${currentPlayer}'s Turn`;
+            winMessage.style.display = 'none';
+            winMessage.textContent = '';
+            document.querySelectorAll('.firework').forEach(firework => firework.remove());
+        }
+    </script>
+</body>
+</html>
