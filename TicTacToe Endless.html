@@ -14,6 +14,7 @@
             font-family: 'Arial', sans-serif;
             color: #fff;
             margin: 0;
+            overflow: hidden;
         }
         .container {
             text-align: center;
@@ -22,6 +23,8 @@
             border-radius: 15px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 1;
         }
         h1 {
             font-size: 2.5em;
@@ -79,6 +82,18 @@
             margin-bottom: 20px;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
         }
+        #win-message {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3em;
+            font-weight: bold;
+            color: black;
+            text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.5);
+            z-index: 10;
+        }
         button {
             padding: 10px 20px;
             font-size: 1.2em;
@@ -101,6 +116,24 @@
             margin-left: auto;
             margin-right: auto;
         }
+        .firework {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: firework 1.5s ease-out forwards;
+            z-index: 0;
+        }
+        @keyframes firework {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(3);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -120,10 +153,11 @@
         </div>
         <button onclick="resetGame()">Reset Game</button>
         <div class="ad-container">
-            <script async="async" data-cfasync="false" src="//pl20580649.profitableratecpm.com/80b225937f8a698c06f80eaa4152b6e8/invoke.js"></script>
-            <div id="container-80b225937f8a698c06f80eaa4152b6e8"></div>
+            <script async="async" data-cfasync="false" src="//pl27260922.profitableratecpm.com/3abbb97e815b8751d7d51d7d72850f96/invoke.js"></script>
+            <div id="container-3abbb97e815b8751d7d51d7d72850f96"></div>
         </div>
     </div>
+    <div id="win-message"></div>
     <script>
         let currentPlayer = 'X';
         let board = ['', '', '', '', '', '', '', '', ''];
@@ -132,6 +166,7 @@
 
         const cells = document.querySelectorAll('.cell');
         const status = document.getElementById('status');
+        const winMessage = document.getElementById('win-message');
 
         cells.forEach(cell => {
             cell.addEventListener('click', () => handleCellClick(cell));
@@ -183,11 +218,14 @@
             cell.classList.add(currentPlayer.toLowerCase());
 
             if (checkWin()) {
-                status.textContent = `Player ${currentPlayer} Wins!`;
+                status.textContent = '';
+                winMessage.style.display = 'block';
+                winMessage.textContent = `Player ${currentPlayer} Won!`;
                 cells.forEach(cell => {
                     cell.style.pointerEvents = 'none';
                     cell.classList.remove('blink');
                 });
+                startFireworks();
                 return;
             }
 
@@ -214,6 +252,22 @@
             });
         }
 
+        function startFireworks() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+            const createFirework = () => {
+                const firework = document.createElement('div');
+                firework.classList.add('firework');
+                firework.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                firework.style.left = `${Math.random() * 100}vw`;
+                firework.style.top = `${Math.random() * 100}vh`;
+                document.body.appendChild(firework);
+                setTimeout(() => firework.remove(), 1500);
+            };
+            for (let i = 0; i < 20; i++) {
+                setTimeout(createFirework, i * 100);
+            }
+        }
+
         function resetGame() {
             board = ['', '', '', '', '', '', '', '', ''];
             xMoves = [];
@@ -225,9 +279,10 @@
                 cell.style.pointerEvents = 'auto';
             });
             status.textContent = `Player ${currentPlayer}'s Turn`;
+            winMessage.style.display = 'none';
+            winMessage.textContent = '';
+            document.querySelectorAll('.firework').forEach(firework => firework.remove());
         }
-        <script async="async" data-cfasync="false" src="//pl27260922.profitableratecpm.com/3abbb97e815b8751d7d51d7d72850f96/invoke.js"></script>
-<div id="container-3abbb97e815b8751d7d51d7d72850f96"></div>
     </script>
 </body>
 </html>
